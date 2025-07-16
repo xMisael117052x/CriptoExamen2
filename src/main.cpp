@@ -1,123 +1,133 @@
 ﻿#include "Prerequisites.h"
 #include "XOREncoder.h"
+#include "CesarEncoder.h"
+#include "VigenereEncoder.h"
+#include "DESEncoder.h"
 
-void displayHeader();
-void displayMenu();
+// Declaraciones de funciones
 void handleUserChoice(const fs::path& desencriptadosPath, const fs::path& encriptadosPath);
-void processFiles(const fs::path& inputDir, const fs::path& outputDir, const std::string& inputExt, const std::string& outputExt, const std::string& operation);
+void processFiles(const fs::path& inputDir, const fs::path& outputDir, const std::string& inputExt, const std::string& outputExt, const std::string& operation, int cipherChoice);
 std::string readFileContents(const fs::path& filePath);
 void writeFileContents(const fs::path& filePath, const std::string& content);
 
+/**
+ * @brief Lee una línea de la consola y la convierte en una opción numérica.
+ * @return El número entero elegido por el usuario, o 0 si la entrada es inválida.
+ */
+int getChoiceFromUser() {
+    std::string line;
+    std::getline(std::cin, line);
+    try {
+        if (line.empty()) {
+            return 0; // Si el usuario solo presiona Enter, es una opción inválida.
+        }
+        return std::stoi(line);
+    } catch (const std::exception& e) {
+        return 0; // Retorna 0 como indicador de opción inválida.
+    }
+}
 
 /**
  * @brief Punto de entrada principal de la aplicación.
- * @param argc Número de argumentos de la línea de comandos.
- * @param argv Array de argumentos de la línea de comandos.
- * @return Código de salida del programa.
  */
 int main(int argc, char* argv[]) {
-    // Verificación básica de que tenemos el argumento del path del ejecutable.
     if (argc < 1) {
         std::cerr << "Error critico: No se pudo determinar la ruta del ejecutable." << std::endl;
         return EXIT_FAILURE;
     }
 
-    // --- LÓGICA PARA ENCONTRAR LAS CARPETAS ---
-    // 1. Obtiene la ruta completa del ejecutable (ej: C:\...\CriptoExamen2\build\CriptoExamen2.exe)
     fs::path exePath = fs::absolute(fs::path(argv[0]));
-    // 2. Sube un nivel para llegar al directorio 'build'.
-    // 3. Sube otro nivel para llegar al directorio raíz del proyecto.
     fs::path projectRoot = exePath.parent_path().parent_path();
-
-    // 4. Construye las rutas absolutas a las carpetas de trabajo.
     fs::path filesEncriptadosDir = projectRoot / "FilesEncriptados";
     fs::path filesDesencriptadosDir = projectRoot / "FilesDesencriptados";
 
-    // Asegurarse de que los directorios necesarios existan.
     fs::create_directory(filesEncriptadosDir);
     fs::create_directory(filesDesencriptadosDir);
 
-    // Inicia el menú principal, pasando las rutas correctas.
     handleUserChoice(filesDesencriptadosDir, filesEncriptadosDir);
 
     return EXIT_SUCCESS;
 }
 
-
-/**
- * @brief Muestra una cabecera o banner para la aplicación.
- */
-void displayHeader() {
-    std::cout << "========================================\n";
-    std::cout << "      Aplicacion de Cifrado XOR\n";
-    std::cout << "========================================\n\n";
-}
-
-
-/**
- * @brief Muestra el menú de opciones al usuario.
- */
-void displayMenu() {
-    std::cout << "Por favor, elige una opcion:\n";
-    std::cout << "  1. Encriptar archivo(s) (.txt -> .cif)\n";
-    std::cout << "  2. Desencriptar archivo(s) (.cif -> .txt)\n";
-    std::cout << "  3. Salir\n";
-    std::cout << "\nTu eleccion: ";
-}
-
-
 /**
  * @brief Gestiona el bucle principal del menú y las acciones del usuario.
- * @param desencriptadosPath Ruta absoluta a la carpeta de archivos desencriptados.
- * @param encriptadosPath Ruta absoluta a la carpeta de archivos encriptados.
  */
 void handleUserChoice(const fs::path& desencriptadosPath, const fs::path& encriptadosPath) {
-    int choice = 0;
-    while (choice != 3) {
-        displayHeader();
-        displayMenu();
-        std::cin >> choice;
+    int mainChoice = 0;
+    while (mainChoice != 3) {
+        // --- Bucle del Menú Principal ---
+        std::cout << "========================================\n";
+        std::cout << "      Aplicacion de Criptografia\n";
+        std::cout << "========================================\n\n" << std::flush;
 
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cout << "Por favor, elige una operacion:\n"
+                  << "  1. Encriptar archivo(s) (.txt -> .cif)\n"
+                  << "  2. Desencriptar archivo(s) (.cif -> .txt)\n"
+                  << "  3. Salir\n" << std::endl;
+        std::cout << "Tu eleccion: " << std::flush;
+        mainChoice = getChoiceFromUser();
 
-        switch (choice) {
-            case 1:
-                processFiles(desencriptadosPath, encriptadosPath, ".txt", ".cif", "encriptar");
-                break;
-            case 2:
-                processFiles(encriptadosPath, desencriptadosPath, ".cif", ".txt", "desencriptar");
-                break;
-            case 3:
-                std::cout << "Saliendo de la aplicacion. ¡Hasta luego!\n";
-                break;
-            default:
-                std::cout << "\nOpcion no valida. Por favor, intenta de nuevo.\n";
-                break;
+        // --- Lógica de Selección ---
+        if (mainChoice == 1 || mainChoice == 2) {
+            std::string operationStr = (mainChoice == 1) ? "Encriptar" : "Desencriptar";
+
+            // --- Menú de Algoritmos ---
+            std::cout << "========================================\n";
+            std::cout << "      Aplicacion de Criptografia\n";
+            std::cout << "========================================\n\n" << std::flush;
+
+            std::cout << "Selecciona el algoritmo para " << operationStr << ":\n"
+                      << "  1. XOR\n"
+                      << "  2. Cesar\n"
+                      << "  3. Vigenere\n"
+                      << "  4. DES\n"
+                      << "  5. Volver al menu principal\n" << std::endl;
+            std::cout << "Tu eleccion: " << std::flush;
+            int cipherChoice = getChoiceFromUser();
+
+            if (cipherChoice >= 1 && cipherChoice <= 4) {
+                const auto& inputDir = (mainChoice == 1) ? desencriptadosPath : encriptadosPath;
+                const auto& outputDir = (mainChoice == 1) ? encriptadosPath : desencriptadosPath;
+                const std::string inputExt = (mainChoice == 1) ? ".txt" : ".cif";
+                const std::string outputExt = (mainChoice == 1) ? ".cif" : ".txt";
+                std::string op = (mainChoice == 1) ? "encriptar" : "desencriptar";
+                processFiles(inputDir, outputDir, inputExt, outputExt, op, cipherChoice);
+            } else if (cipherChoice == 5) {
+                continue; // Vuelve al inicio del bucle while
+            } else {
+                 std::cout << "\nOpcion de algoritmo no valida." << std::endl;
+            }
+
+        } else if (mainChoice != 3) {
+            std::cout << "\nOpcion principal no valida." << std::endl;
         }
 
-        if (choice != 3) {
-            std::cout << "\nPresiona Enter para continuar...";
-            std::cin.get();
+        // --- Pausa para Continuar ---
+        if (mainChoice != 3) {
+            std::cout << "\nPresiona Enter para continuar..." << std::flush;
+            std::string dummy;
+            std::getline(std::cin, dummy); // Espera a que el usuario presione Enter
         }
     }
+    std::cout << "\nSaliendo de la aplicacion. ¡Hasta luego!\n";
 }
 
 
 /**
- * @brief Procesa archivos para encriptar o desencriptar.
- * @param inputDir Directorio de entrada (ruta absoluta).
- * @param outputDir Directorio de salida (ruta absoluta).
- * @param inputExt Extensión de archivo de entrada.
- * @param outputExt Extensión de archivo de salida.
- * @param operation Descripción de la operación (para los mensajes al usuario).
+ * @brief Procesa archivos para encriptar o desencriptar según el algoritmo elegido.
  */
-void processFiles(const fs::path& inputDir, const fs::path& outputDir, const std::string& inputExt, const std::string& outputExt, const std::string& operation) {
-    // Ahora inputDir.string() mostrará la ruta completa, lo que es más claro para el usuario.
-    std::cout << "\nIntroduce el/los nombre(s) de archivo(s) en '" << inputDir.string() << "' (separados por espacios, sin extension):\n> ";
+void processFiles(const fs::path& inputDir, const fs::path& outputDir, const std::string& inputExt, const std::string& outputExt, const std::string& operation, int cipherChoice) {
+    std::cout << "========================================\n";
+    std::cout << "      Aplicacion de Criptografia\n";
+    std::cout << "========================================\n\n" << std::flush;
+
+    std::cout << "Operacion: " << operation << " con algoritmo " << (cipherChoice == 1 ? "XOR" : cipherChoice == 2 ? "Cesar" : cipherChoice == 3 ? "Vigenere" : "DES") << "\n";
+
+    std::cout << "\nIntroduce el/los nombre(s) de archivo(s) en '" << inputDir.string() << "' (separados por espacios, sin extension):\n> " << std::flush;
     std::string line;
     std::getline(std::cin, line);
 
-    std::cout << "Introduce la contrasena:\n> ";
+    std::cout << "Introduce la contrasena/clave:\n> " << std::flush;
     std::string password;
     std::getline(std::cin, password);
 
@@ -131,10 +141,12 @@ void processFiles(const fs::path& inputDir, const fs::path& outputDir, const std
     int successCount = 0;
     int failCount = 0;
 
-    XOREncoder encoder;
+    XOREncoder xorEncoder;
+    CesarEncoder cesarEncoder;
+    VigenereEncoder vigenereEncoder;
+    DESEncoder desEncoder;
 
     while (ss >> filename) {
-        // La construcción de la ruta ahora es infalible porque parte de una ruta absoluta.
         fs::path inputFile = inputDir / (filename + inputExt);
 
         if (!fs::exists(inputFile)) {
@@ -144,21 +156,34 @@ void processFiles(const fs::path& inputDir, const fs::path& outputDir, const std
         }
 
         std::string content = readFileContents(inputFile);
-        if (content.empty() && fs::file_size(inputFile) > 0) {
+        if (content.empty() && fs::is_regular_file(inputFile) && fs::file_size(inputFile) > 0) {
              std::cerr << "Error: No se pudo leer el contenido de '" << inputFile.string() << "'. Omitiendo.\n";
              failCount++;
              continue;
         }
 
-        std::string processedContent = encoder.encode(content, password);
+        std::string processedContent;
 
-        // Generar nombre de archivo con sufijo incremental si ya existe
+        switch(cipherChoice) {
+            case 1:
+                processedContent = xorEncoder.encode(content, password);
+                break;
+            case 2:
+                processedContent = (operation == "encriptar") ? cesarEncoder.encode(content, password) : cesarEncoder.decode(content, password);
+                break;
+            case 3:
+                processedContent = (operation == "encriptar") ? vigenereEncoder.encode(content, password) : vigenereEncoder.decode(content, password);
+                break;
+            case 4:
+                processedContent = (operation == "encriptar") ? desEncoder.encode(content, password) : desEncoder.decode(content, password);
+                break;
+        }
+
         fs::path baseOutputFile = outputDir / (filename + outputExt);
         fs::path outputFile = baseOutputFile;
         int suffix = 1;
         while (fs::exists(outputFile)) {
-            std::string name = filename + "-" + std::to_string(suffix) + outputExt;
-            outputFile = outputDir / name;
+            outputFile = outputDir / (filename + "-" + std::to_string(suffix) + outputExt);
             suffix++;
         }
         writeFileContents(outputFile, processedContent);
@@ -175,14 +200,10 @@ void processFiles(const fs::path& inputDir, const fs::path& outputDir, const std
 
 /**
  * @brief Lee todo el contenido de un archivo y lo devuelve como un string.
- * @param filePath La ruta al archivo.
- * @return El contenido del archivo.
  */
 std::string readFileContents(const fs::path& filePath) {
     std::ifstream file(filePath, std::ios::binary);
-    if (!file.is_open()) {
-        return "";
-    }
+    if (!file.is_open()) return "";
     std::stringstream buffer;
     buffer << file.rdbuf();
     return buffer.str();
@@ -191,8 +212,6 @@ std::string readFileContents(const fs::path& filePath) {
 
 /**
  * @brief Escribe un string en un archivo, sobreescribiéndolo si ya existe.
- * @param filePath La ruta al archivo de salida.
- * @param content El contenido a escribir.
  */
 void writeFileContents(const fs::path& filePath, const std::string& content) {
     std::ofstream file(filePath, std::ios::binary);

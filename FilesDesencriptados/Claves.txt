@@ -1,0 +1,11 @@
+﻿XOR y DES:
+unity123$
+
+Cesar:
+12
+
+Vigenere:
+clave
+
+Reto:
+CrashNebula67Hielo$
